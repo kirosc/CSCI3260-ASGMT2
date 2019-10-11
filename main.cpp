@@ -23,6 +23,8 @@ Student Name:
 #include <vector>
 #include <map>
 using namespace std;
+using glm::vec3;
+using glm::mat4;
 
 GLint programID;
 
@@ -354,10 +356,25 @@ void sendDataToOpenGL()
 	glEnableVertexAttribArray(colAttrib);
 	glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), BUFFER_OFFSET(3));
 
+	// Set up view transformation
+	mat4 view = lookAt(
+		vec3(0.0f, -1.5f, 0.8f),	// Position of the camera
+		vec3(0.0f,  0.0f, 0.0f),	// The point to be centered on-screen
+		vec3(0.0f,  0.0f, 1.0f)		// The up axis
+	);
+	GLint uniView = glGetUniformLocation(programID, "view");
+	glUniformMatrix4fv(uniView, 1, GL_FALSE, value_ptr(view));
+
+	// Create a perspective projection matrix
+	// Specify FOV, aspect ratio, near and far
+	mat4 proj = glm::perspective(glm::radians(40.0f), 512.0f / 512.0f, 1.0f, 10.0f);
+	GLint uniProj = glGetUniformLocation(programID, "proj");
+	glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
 }
 
 void paintGL(void)
 {
+	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//TODO:
 	//Set lighting information, such as position and color of lighting source
