@@ -22,6 +22,19 @@ Student Name:
 #include <fstream>
 #include <vector>
 #include <map>
+
+// struct for storing the obj file
+struct Vertex {
+	glm::vec3 position;
+	glm::vec2 uv;
+	glm::vec3 normal;
+};
+
+struct Model {
+	std::vector<Vertex> vertices;
+	std::vector<unsigned int> indices;
+};
+
 using namespace std;
 using glm::vec3;
 using glm::mat4;
@@ -31,6 +44,8 @@ GLint programID;
 GLuint groundVAO;
 GLuint groundVBO;
 GLuint groundEBO;
+
+Model ground;
 
 //a series utilities for setting shader parameters 
 void setMat4(const std::string& name, glm::mat4& value)
@@ -158,18 +173,6 @@ void special_callback(int key, int x, int y)
 	//TODO: Use keyboard to do interactive events and animation
 
 }
-
-// struct for storing the obj file
-struct Vertex {
-	glm::vec3 position;
-	glm::vec2 uv;
-	glm::vec3 normal;
-};
-
-struct Model {
-	std::vector<Vertex> vertices;
-	std::vector<unsigned int> indices;
-};
 
 Model loadOBJ(const char* objPath)
 {
@@ -319,42 +322,21 @@ void sendDataToOpenGL()
 	//Load objects and bind to VAO & VBO
 	//Load texture
 
-
-	// Vertices
-	const GLfloat ground[] = {
-		// X	  Y	    Z	     R	     G	     B
-		-0.50f,  0.50f, 0.00f, 0.827f, 0.815f, 0.788f, // Top-left
-		 0.50f,  0.50f, 0.00f, 0.827f, 0.815f, 0.788f, // Top-right
-		 0.50f, -0.50f, 0.00f, 0.827f, 0.815f, 0.788f, // Bottom-right
-		-0.50f, -0.50f, 0.00f, 0.827f, 0.815f, 0.788f  // Bottom-left
-	};
-
-	// Indexing
-	GLuint rectangleElements[] = {
-		0, 1, 2,
-		2, 3, 0
-	};
-
 	// Ground
+	ground = loadOBJ("resources/floor/floor.obj");
 	glGenVertexArrays(1, &groundVAO);
 	glBindVertexArray(groundVAO);
 	glGenBuffers(1, &groundVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, groundVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(ground), ground, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, ground.vertices.size() * sizeof (Vertex), &ground.vertices[0], GL_STATIC_DRAW);
 	glGenBuffers(1, &groundEBO); // Element array
-
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, groundEBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(rectangleElements), rectangleElements, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, ground.indices.size() * sizeof(unsigned int), &ground.indices[0], GL_STATIC_DRAW);
 
 	// Vertex position
 	GLint posAttrib = glGetAttribLocation(programID, "position");
 	glEnableVertexAttribArray(posAttrib);
-	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
-
-	// Vertex color
-	GLint colAttrib = glGetAttribLocation(programID, "color");
-	glEnableVertexAttribArray(colAttrib);
-	glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), BUFFER_OFFSET(3));
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
 
 	// Set up view transformation
 	mat4 view = lookAt(
@@ -382,7 +364,7 @@ void paintGL(void)
 	//Bind different textures
 
 	glBindVertexArray(groundVAO);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering
+	glDrawElements(GL_TRIANGLES, ground.indices.size(), GL_UNSIGNED_INT, 0); // Rendering
 
 	glFlush();
 	glutPostRedisplay();
@@ -407,6 +389,7 @@ int main(int argc, char* argv[])
 	with different events, e.g. window sizing, mouse click or
 	keyboard stroke */
 	initializedGL();
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Paint the background color once
 	glutDisplayFunc(paintGL);
 
 	glutMouseFunc(mouse_callback);
