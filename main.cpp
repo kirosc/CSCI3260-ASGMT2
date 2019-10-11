@@ -7,6 +7,7 @@ Student ID:
 Student Name:
 *********************************************************/
 
+#define BUFFER_OFFSET(i) ((char *)NULL + (i * sizeof(float)))
 #include "Dependencies/glew/glew.h"
 #include "Dependencies/freeglut/freeglut.h"
 #include "Dependencies/glm/glm.hpp"
@@ -24,7 +25,10 @@ Student Name:
 using namespace std;
 
 GLint programID;
-// Could define the Vao&Vbo and interaction parameter here
+
+GLuint groundVAO;
+GLuint groundVBO;
+GLuint groundEBO;
 
 //a series utilities for setting shader parameters 
 void setMat4(const std::string& name, glm::mat4& value)
@@ -314,6 +318,42 @@ void sendDataToOpenGL()
 	//Load texture
 
 
+	// Vertices
+	const GLfloat ground[] = {
+		// X	  Y	    Z	     R	     G	     B
+		-0.50f,  0.50f, 0.00f, 0.827f, 0.815f, 0.788f, // Top-left
+		 0.50f,  0.50f, 0.00f, 0.827f, 0.815f, 0.788f, // Top-right
+		 0.50f, -0.50f, 0.00f, 0.827f, 0.815f, 0.788f, // Bottom-right
+		-0.50f, -0.50f, 0.00f, 0.827f, 0.815f, 0.788f  // Bottom-left
+	};
+
+	// Indexing
+	GLuint rectangleElements[] = {
+		0, 1, 2,
+		2, 3, 0
+	};
+
+	// Ground
+	glGenVertexArrays(1, &groundVAO);
+	glBindVertexArray(groundVAO);
+	glGenBuffers(1, &groundVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, groundVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(ground), ground, GL_STATIC_DRAW);
+	glGenBuffers(1, &groundEBO); // Element array
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, groundEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(rectangleElements), rectangleElements, GL_STATIC_DRAW);
+
+	// Vertex position
+	GLint posAttrib = glGetAttribLocation(programID, "position");
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
+
+	// Vertex color
+	GLint colAttrib = glGetAttribLocation(programID, "color");
+	glEnableVertexAttribArray(colAttrib);
+	glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), BUFFER_OFFSET(3));
+
 }
 
 void paintGL(void)
@@ -324,6 +364,8 @@ void paintGL(void)
 	//Set transformation matrix
 	//Bind different textures
 
+	glBindVertexArray(groundVAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering
 
 	glFlush();
 	glutPostRedisplay();
@@ -339,6 +381,8 @@ void initializedGL(void) //run only once
 int main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGBA);
+	glutInitWindowSize(512, 512);
 	glutCreateWindow("Assignment 2");
 
 	//TODO:
