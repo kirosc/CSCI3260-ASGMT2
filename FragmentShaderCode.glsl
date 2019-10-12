@@ -5,9 +5,9 @@ in vec3 theColor;
 
 out vec4 daColor;
 
-uniform sampler2D texGround;
+uniform sampler2D tex;
 
 void main()
 {
-	daColor = texture(texGround, UV);
+	daColor = texture(tex, UV);
 }

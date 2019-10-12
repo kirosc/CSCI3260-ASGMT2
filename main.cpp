@@ -42,6 +42,10 @@ using glm::mat4;
 GLint programID;
 GLint uniTrans;
 
+GLuint textureID[2];
+GLuint groundTexture;
+GLuint catTexture;
+
 GLuint groundVAO;
 GLuint groundVBO;
 GLuint groundEBO;
@@ -353,7 +357,7 @@ Model loadOBJ(const char* objPath)
 	return model;
 }
 
-GLuint loadTexture(const char* texturePath)
+GLuint loadTexture(const char* texturePath, const int idx)
 {
 	// tell stb_image.h to flip loaded texture's on the y-axis.
 	stbi_set_flip_vertically_on_load(true);
@@ -372,9 +376,8 @@ GLuint loadTexture(const char* texturePath)
 		exit(1);
 	}
 
-	GLuint textureID = 0;
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_2D, textureID);
+	glGenTextures(2, textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID[idx]);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -388,7 +391,7 @@ GLuint loadTexture(const char* texturePath)
 	std::cout << "Load " << texturePath << " successfully!" << std::endl;
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	return textureID;
+	return textureID[idx];
 }
 
 // Transform the object based on the given name
@@ -429,12 +432,7 @@ void sendDataToOpenGL()
 	glEnableVertexAttribArray(texAttrib);
 	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
 
-	// Load textures
-	GLuint groundTexture = loadTexture("./resources/floor/floor_diff.jpg");
-	GLuint TextureID = glGetUniformLocation(programID, "texGround");
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, groundTexture);
-	glUniform1i(TextureID, 0);
+	groundTexture = loadTexture("./resources/floor/floor_diff.jpg", 0);
 
 	// Cat
 	cat = loadOBJ("resources/cat/cat.obj");
@@ -447,9 +445,15 @@ void sendDataToOpenGL()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, catEBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, cat.indices.size() * sizeof(unsigned int), &cat.indices[0], GL_STATIC_DRAW);
 
-	// Specify the layout of the vertex data
-	glEnableVertexAttribArray(posAttrib);
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+
+	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+
+	catTexture = loadTexture("./resources/cat/cat_01.jpg", 1);
+
+	// Get reference of texture
+	GLuint textureID = glGetUniformLocation(programID, "tex");
+	glUniform1i(textureID, 0);
 }
 
 void paintGL(void)
@@ -467,11 +471,18 @@ void paintGL(void)
 
 	// Ground
 	transform("ground");
+	// Load textures
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, groundTexture);
+
 	glBindVertexArray(groundVAO);
 	glDrawElements(GL_TRIANGLES, ground.indices.size(), GL_UNSIGNED_INT, 0); // Rendering
 
 	// Cat
 	transform("cat");
+
+	glBindTexture(GL_TEXTURE_2D, catTexture);
+
 	glBindVertexArray(catVAO);
 	glDrawElements(GL_TRIANGLES, cat.indices.size(), GL_UNSIGNED_INT, 0);
 
