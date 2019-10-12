@@ -515,7 +515,7 @@ void paintGL(void)
 	GLint uniProj = glGetUniformLocation(programID, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
 
-	glFlush();
+	glutSwapBuffers();
 	glutPostRedisplay();
 }
 
@@ -529,7 +529,8 @@ void initializedGL(void) //run only once
 int main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glutSetOption(GLUT_MULTISAMPLE, 4);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitWindowSize(800, 800);
 	glutCreateWindow("Assignment 2");
 
