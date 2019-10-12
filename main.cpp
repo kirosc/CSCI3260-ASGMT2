@@ -58,10 +58,12 @@ float scale_press_num = 1.0f;
 float translate_delta = 0.01f;
 float cameraX_delta = 0.01f;
 float cameraY_delta = 0.01f;
+float cameraZ_delta = 0.05f;
 
 int translate_press_num = 0;
 int cameraX_move_num = 0;
-int cameraY_move_num = 150;
+int cameraY_move_num = 150; // Y: 1.5
+int cameraZ_move_num = 20; // Z: 1.0
 
 int lastMouseX, lastMouseY;
 bool mouseClicked = false;
@@ -217,6 +219,12 @@ void motion_callback(int x, int y)
 		lastMouseX = x;
 		lastMouseY = y;
 	}
+}
+
+void mouseWheel_callback(int wheel, int direction, int x, int y)
+{
+	//					Zoom-in				 Zoom-out
+	direction > 0 ? cameraZ_move_num-- : cameraZ_move_num++;
 }
 
 void keyboard_callback(unsigned char key, int x, int y)
@@ -408,10 +416,6 @@ void transform(string name) {
 
 void sendDataToOpenGL()
 {
-	//TODO:
-	//Load objects and bind to VAO & VBO
-	//Load texture
-
 	// Ground
 	ground = loadOBJ("resources/floor/floor.obj");
 	glGenVertexArrays(1, &groundVAO);
@@ -441,12 +445,14 @@ void sendDataToOpenGL()
 	glGenBuffers(1, &catVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, catVBO);
 	glBufferData(GL_ARRAY_BUFFER, cat.vertices.size() * sizeof(Vertex), &cat.vertices[0], GL_STATIC_DRAW);
-	glGenBuffers(1, &catEBO); // Element array
+	glGenBuffers(1, &catEBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, catEBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, cat.indices.size() * sizeof(unsigned int), &cat.indices[0], GL_STATIC_DRAW);
 
+	glEnableVertexAttribArray(posAttrib);
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
 
+	glEnableVertexAttribArray(texAttrib);
 	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
 
 	catTexture = loadTexture("./resources/cat/cat_01.jpg", 1);
@@ -474,9 +480,9 @@ void paintGL(void)
 	// Load textures
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, groundTexture);
-
+	// Rendering
 	glBindVertexArray(groundVAO);
-	glDrawElements(GL_TRIANGLES, ground.indices.size(), GL_UNSIGNED_INT, 0); // Rendering
+	glDrawElements(GL_TRIANGLES, ground.indices.size(), GL_UNSIGNED_INT, 0);
 
 	// Cat
 	transform("cat");
@@ -490,7 +496,7 @@ void paintGL(void)
 	mat4 view = lookAt(
 		vec3(cameraX_delta * cameraX_move_num,
 			 cameraY_delta * cameraY_move_num,
-			 1.0f),				// Position of the camera
+			 cameraZ_delta * cameraZ_move_num),				// Position of the camera
 		vec3(0.0f, 0.0f, 0.0f),	// The point to be centered on-screen
 		vec3(0.0f, 1.0f, 0.0f)	// The up axis
 	);
@@ -531,15 +537,11 @@ int main(int argc, char* argv[])
 
 	glutMouseFunc(mouse_callback);
 	glutMotionFunc(motion_callback);
+	glutMouseWheelFunc(mouseWheel_callback);
 	glutKeyboardFunc(keyboard_callback);
 	glutSpecialFunc(special_callback);
 
 	glutMainLoop();
 
 	return 0;
-}
-
-void mouseWheel_callback(int wheel, int direction, int x, int y)
-{
-	// Optional.
 }
