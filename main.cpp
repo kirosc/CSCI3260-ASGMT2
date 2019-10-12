@@ -45,13 +45,25 @@ GLint uniTrans;
 GLuint groundVAO;
 GLuint groundVBO;
 GLuint groundEBO;
+GLuint catVAO;
+GLuint catVBO;
+GLuint catEBO;
 
 float scale_delta = 1.0f;
 float scale_press_num = 1.0f;
 float translate_delta = 0.01f;
+float cameraX_delta = 0.01f;
+float cameraY_delta = 0.01f;
+
 int translate_press_num = 0;
+int cameraX_move_num = 0;
+int cameraY_move_num = 150;
+
+int lastMouseX, lastMouseY;
+bool mouseClicked = false;
 
 Model ground;
+Model cat;
 
 //a series utilities for setting shader parameters 
 void setMat4(const std::string& name, glm::mat4& value)
@@ -159,13 +171,48 @@ void installShaders()
 
 void mouse_callback(int button, int state, int x, int y)
 {
-	//TODO: Use mouse to do interactive events and animation
-
+	if (button == GLUT_LEFT_BUTTON)
+	{
+		if (state == GLUT_DOWN)
+		{
+			lastMouseX = x;
+			lastMouseY = y;
+			mouseClicked = true;
+		}
+		else
+		{
+			mouseClicked = false;
+		}
+	}
 }
 
 void motion_callback(int x, int y)
 {
-	//TODO: Use mouse to do interactive events and animation
+	if (mouseClicked)
+	{
+		if (y < lastMouseY)
+		{
+			cameraY_move_num++;
+		}
+		else if (y > lastMouseY)
+		{
+			cameraY_move_num--;
+		}
+
+
+		if (x < lastMouseX)
+		{
+			cameraX_move_num--;
+		}
+		else if (x > lastMouseX)
+		{
+			cameraX_move_num++;
+		}
+
+		printf("X: %.3f, Y: %.3f\n", cameraX_delta * cameraX_move_num, cameraY_delta * cameraY_move_num);
+		lastMouseX = x;
+		lastMouseY = y;
+	}
 }
 
 void keyboard_callback(unsigned char key, int x, int y)
@@ -332,7 +379,7 @@ GLuint loadTexture(const char* texturePath)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -350,7 +397,7 @@ void transform(string name) {
 
 	if (name == "ground")
 	{
-		model = glm::scale(mat4(1.0f), vec3(0.01f, 1.0f, 0.0125f));
+		model = glm::scale(mat4(1.0f), vec3(0.01f, 0.01f, 0.0125f));
 		model *= glm::translate(mat4(1.0f), vec3(0.0f, 1.0f, 0.0f));
 		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
 	}
@@ -388,6 +435,21 @@ void sendDataToOpenGL()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, groundTexture);
 	glUniform1i(TextureID, 0);
+
+	// Cat
+	cat = loadOBJ("resources/cat/cat.obj");
+	glGenVertexArrays(1, &catVAO);
+	glBindVertexArray(catVAO);
+	glGenBuffers(1, &catVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, catVBO);
+	glBufferData(GL_ARRAY_BUFFER, cat.vertices.size() * sizeof(Vertex), &cat.vertices[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &catEBO); // Element array
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, catEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, cat.indices.size() * sizeof(unsigned int), &cat.indices[0], GL_STATIC_DRAW);
+
+	// Specify the layout of the vertex data
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
 }
 
 void paintGL(void)
@@ -403,22 +465,30 @@ void paintGL(void)
 	//Set transformation matrix
 	//Bind different textures
 
+	// Ground
 	transform("ground");
 	glBindVertexArray(groundVAO);
 	glDrawElements(GL_TRIANGLES, ground.indices.size(), GL_UNSIGNED_INT, 0); // Rendering
 
+	// Cat
+	transform("cat");
+	glBindVertexArray(catVAO);
+	glDrawElements(GL_TRIANGLES, cat.indices.size(), GL_UNSIGNED_INT, 0);
+
 	// Set up view transformation
 	mat4 view = lookAt(
-		vec3(0.0f, 1.5f, 0.0f),	// Position of the camera
+		vec3(cameraX_delta * cameraX_move_num,
+			 cameraY_delta * cameraY_move_num,
+			 1.0f),				// Position of the camera
 		vec3(0.0f, 0.0f, 0.0f),	// The point to be centered on-screen
-		vec3(0.0f, 0.0f, 1.0f)		// The up axis
+		vec3(0.0f, 1.0f, 0.0f)	// The up axis
 	);
 	GLint uniView = glGetUniformLocation(programID, "view");
 	glUniformMatrix4fv(uniView, 1, GL_FALSE, value_ptr(view));
 
 	// Create a perspective projection matrix
 	// Specify FOV, aspect ratio, near and far
-	mat4 proj = glm::perspective(glm::radians(40.0f), 512.0f / 512.0f, 1.0f, 10.0f);
+	mat4 proj = glm::perspective(glm::radians(40.0f), 512.0f / 512.0f, 0.5f, 100.0f);
 	GLint uniProj = glGetUniformLocation(programID, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
 
