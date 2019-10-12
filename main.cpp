@@ -62,7 +62,7 @@ float cameraZ_delta = 0.05f;
 
 int translate_press_num = 0;
 int cameraX_move_num = 0;
-int cameraY_move_num = 150; // Y: 1.5
+int cameraY_move_num = 50; // Y: 0.5
 int cameraZ_move_num = 20; // Z: 1.0
 
 int lastMouseX, lastMouseY;
@@ -408,8 +408,14 @@ void transform(string name) {
 
 	if (name == "ground")
 	{
-		model = glm::scale(mat4(1.0f), vec3(0.01f, 0.01f, 0.0125f));
+		model = glm::scale(mat4(1.0f), vec3(0.05f, 0.05f, 0.0625f));
 		model *= glm::translate(mat4(1.0f), vec3(0.0f, 1.0f, 0.0f));
+		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
+	}
+	else if (name == "cat")
+	{
+		model = glm::scale(mat4(1.0f), vec3(0.005f, 0.005f, 0.005f));
+		model *= glm::rotate(mat4(1.0f), glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
 		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
 	}
 }
@@ -505,7 +511,7 @@ void paintGL(void)
 
 	// Create a perspective projection matrix
 	// Specify FOV, aspect ratio, near and far
-	mat4 proj = glm::perspective(glm::radians(40.0f), 512.0f / 512.0f, 0.5f, 100.0f);
+	mat4 proj = glm::perspective(glm::radians(40.0f), 512.0f / 512.0f, 0.01f, 10.0f);
 	GLint uniProj = glGetUniformLocation(programID, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
 
@@ -524,7 +530,7 @@ int main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitWindowSize(512, 512);
+	glutInitWindowSize(800, 800);
 	glutCreateWindow("Assignment 2");
 
 	//TODO:
