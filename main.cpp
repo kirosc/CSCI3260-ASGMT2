@@ -40,10 +40,16 @@ using glm::vec3;
 using glm::mat4;
 
 GLint programID;
+GLint uniTrans;
 
 GLuint groundVAO;
 GLuint groundVBO;
 GLuint groundEBO;
+
+float scale_delta = 1.0f;
+float scale_press_num = 1.0f;
+float translate_delta = 0.01f;
+int translate_press_num = 0;
 
 Model ground;
 
@@ -164,8 +170,22 @@ void motion_callback(int x, int y)
 
 void keyboard_callback(unsigned char key, int x, int y)
 {
-	//TODO: Use keyboard to do interactive events and animation
-
+	if (key == 'w')
+	{
+		scale_press_num *= 1.01;
+	}
+	else if (key == 's')
+	{
+		scale_press_num *= 0.99;
+	}
+	else if (key == 'a')
+	{
+		translate_press_num--;
+	}
+	else if (key == 'd')
+	{
+		translate_press_num++;
+	}
 }
 
 void special_callback(int key, int x, int y)
@@ -316,6 +336,18 @@ GLuint loadTexture(const char* texturePath)
 	return textureID;
 }
 
+// Transform the object based on the given name
+void transform(string name) {
+	mat4 model = mat4(1.0f);
+
+	if (name == "ground")
+	{
+		model = glm::scale(mat4(1.0f), vec3(0.01f, 1.0f, 0.0125f));
+		model *= glm::translate(mat4(1.0f), vec3(0.0f, 1.0f, 0.0f));
+		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
+	}
+}
+
 void sendDataToOpenGL()
 {
 	//TODO:
@@ -338,11 +370,30 @@ void sendDataToOpenGL()
 	glEnableVertexAttribArray(posAttrib);
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
 
+}
+
+void paintGL(void)
+{
+	glEnable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Get reference of model variable
+	uniTrans = glGetUniformLocation(programID, "model");
+
+	//TODO:
+	//Set lighting information, such as position and color of lighting source
+	//Set transformation matrix
+	//Bind different textures
+
+	transform("ground");
+	glBindVertexArray(groundVAO);
+	glDrawElements(GL_TRIANGLES, ground.indices.size(), GL_UNSIGNED_INT, 0); // Rendering
+
 	// Set up view transformation
 	mat4 view = lookAt(
-		vec3(0.0f, -1.5f, 0.8f),	// Position of the camera
-		vec3(0.0f,  0.0f, 0.0f),	// The point to be centered on-screen
-		vec3(0.0f,  0.0f, 1.0f)		// The up axis
+		vec3(0.0f, 1.5f, 0.0f),	// Position of the camera
+		vec3(0.0f, 0.0f, 0.0f),	// The point to be centered on-screen
+		vec3(0.0f, 0.0f, 1.0f)		// The up axis
 	);
 	GLint uniView = glGetUniformLocation(programID, "view");
 	glUniformMatrix4fv(uniView, 1, GL_FALSE, value_ptr(view));
@@ -352,19 +403,6 @@ void sendDataToOpenGL()
 	mat4 proj = glm::perspective(glm::radians(40.0f), 512.0f / 512.0f, 1.0f, 10.0f);
 	GLint uniProj = glGetUniformLocation(programID, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, value_ptr(proj));
-}
-
-void paintGL(void)
-{
-	glEnable(GL_DEPTH_TEST);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//TODO:
-	//Set lighting information, such as position and color of lighting source
-	//Set transformation matrix
-	//Bind different textures
-
-	glBindVertexArray(groundVAO);
-	glDrawElements(GL_TRIANGLES, ground.indices.size(), GL_UNSIGNED_INT, 0); // Rendering
 
 	glFlush();
 	glutPostRedisplay();
@@ -380,7 +418,7 @@ void initializedGL(void) //run only once
 int main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitWindowSize(512, 512);
 	glutCreateWindow("Assignment 2");
 
