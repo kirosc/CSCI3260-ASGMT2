@@ -326,8 +326,16 @@ GLuint loadTexture(const char* texturePath)
 	}
 
 	GLuint textureID = 0;
-	//TODO: Create one OpenGL texture and set the texture parameter 
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	stbi_image_free(data);
 	std::cout << "Load " << texturePath << " successfully!" << std::endl;
@@ -365,11 +373,21 @@ void sendDataToOpenGL()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, groundEBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, ground.indices.size() * sizeof(unsigned int), &ground.indices[0], GL_STATIC_DRAW);
 
-	// Vertex position
+	// Specify the layout of the vertex data
 	GLint posAttrib = glGetAttribLocation(programID, "position");
 	glEnableVertexAttribArray(posAttrib);
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
 
+	GLint texAttrib = glGetAttribLocation(programID, "texcoord");
+	glEnableVertexAttribArray(texAttrib);
+	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+
+	// Load textures
+	GLuint groundTexture = loadTexture("./resources/floor/floor_diff.jpg");
+	GLuint TextureID = glGetUniformLocation(programID, "texGround");
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, groundTexture);
+	glUniform1i(TextureID, 0);
 }
 
 void paintGL(void)

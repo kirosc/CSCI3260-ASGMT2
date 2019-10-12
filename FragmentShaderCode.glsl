@@ -1,9 +1,13 @@
 #version 430 //GLSL version your computer supports
 
-out vec4 daColor;
+in vec2 UV;
 in vec3 theColor;
+
+out vec4 daColor;
+
+uniform sampler2D texGround;
 
 void main()
 {
-	daColor = vec4(theColor,1.0);
+	daColor = texture(texGround, UV);
 }
