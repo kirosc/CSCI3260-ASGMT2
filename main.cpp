@@ -23,6 +23,9 @@ Student Name:
 #include <vector>
 #include <map>
 
+// Function Declaration
+GLuint loadTexture(const char* texturePath, const int idx);
+
 // struct for storing the obj file
 struct Vertex {
 	glm::vec3 position;
@@ -240,6 +243,27 @@ void keyboard_callback(unsigned char key, int x, int y)
 	}
 	else if (key == 'd')
 	{
+	}
+	else if (key == '1')
+	{
+		catTexture = loadTexture("./resources/cat/cat_01.jpg", 1);
+	}
+	else if (key == '2')
+	{
+		catTexture = loadTexture("./resources/cat/cat_02.jpg", 1);
+	}
+	else if (key == '3')
+	{
+		groundTexture = loadTexture("./resources/floor/floor_diff.jpg", 0);
+	}
+	else if (key == '4')
+	{
+		groundTexture = loadTexture("./resources/floor/floor_spec.jpg", 0);
+	}
+	else if (key == 27)
+	{
+		// Exit the program gracefully
+		glutLeaveMainLoop();
 	}
 }
 
