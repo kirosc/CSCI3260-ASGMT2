@@ -53,14 +53,14 @@ GLuint catVAO;
 GLuint catVBO;
 GLuint catEBO;
 
-float scale_delta = 1.0f;
-float scale_press_num = 1.0f;
 float translate_delta = 0.01f;
+float rotate_delta = 0.1f;
 float cameraX_delta = 0.01f;
 float cameraY_delta = 0.01f;
 float cameraZ_delta = 0.05f;
 
 int translate_press_num = 0;
+int rotate_press_num = 0;
 int cameraX_move_num = 0;
 int cameraY_move_num = 50; // Y: 0.5
 int cameraZ_move_num = 20; // Z: 1.0
@@ -231,26 +231,36 @@ void keyboard_callback(unsigned char key, int x, int y)
 {
 	if (key == 'w')
 	{
-		scale_press_num *= 1.01;
 	}
 	else if (key == 's')
 	{
-		scale_press_num *= 0.99;
 	}
 	else if (key == 'a')
 	{
-		translate_press_num--;
 	}
 	else if (key == 'd')
 	{
-		translate_press_num++;
 	}
 }
 
 void special_callback(int key, int x, int y)
 {
-	//TODO: Use keyboard to do interactive events and animation
-
+	if (key == GLUT_KEY_UP)
+	{
+		translate_press_num++;
+	}
+	else if (key == GLUT_KEY_DOWN)
+	{
+		translate_press_num--;
+	}
+	else if (key == GLUT_KEY_LEFT)
+	{
+		rotate_press_num--;
+	}
+	else if (key == GLUT_KEY_RIGHT)
+	{
+		rotate_press_num++;
+	}
 }
 
 Model loadOBJ(const char* objPath)
@@ -408,14 +418,16 @@ void transform(string name) {
 
 	if (name == "ground")
 	{
-		model = glm::scale(mat4(1.0f), vec3(0.05f, 0.05f, 0.0625f));
-		model *= glm::translate(mat4(1.0f), vec3(0.0f, 1.0f, 0.0f));
+		model = glm::translate(mat4(1.0f), vec3(0.0f, 0.05f, 0.0f));
+		model *= glm::scale(mat4(1.0f), vec3(0.05f, 0.05f, 0.0625f)); // Apply first
 		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
 	}
 	else if (name == "cat")
 	{
-		model = glm::scale(mat4(1.0f), vec3(0.005f, 0.005f, 0.005f));
+		model = glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, translate_delta * translate_press_num * 1.0f));
+		model *= glm::rotate(mat4(1.0f), rotate_delta * rotate_press_num * glm::radians(-45.0f), vec3(0.0f, 1.0f, 0.0f));
 		model *= glm::rotate(mat4(1.0f), glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+		model *= glm::scale(mat4(1.0f), vec3(0.005f, 0.005f, 0.005f));
 		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
 	}
 }
