@@ -44,6 +44,7 @@ using glm::mat4;
 
 GLint programID;
 GLint uniTrans;
+GLint uniAmbient;
 
 GLuint textureID[2];
 GLuint groundTexture;
@@ -509,13 +510,18 @@ void paintGL(void)
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Get reference of model variable
+	// Get reference of shader variable
 	uniTrans = glGetUniformLocation(programID, "model");
+	uniAmbient = glGetUniformLocation(programID, "ambient");
 
 	//TODO:
 	//Set lighting information, such as position and color of lighting source
 	//Set transformation matrix
 	//Bind different textures
+
+	// Lighting
+	vec3 ambient(0.5f, 0.5f, 0.5f);
+	glUniform3fv(uniAmbient, 1, value_ptr(ambient));
 
 	// Ground
 	transform("ground");
@@ -575,7 +581,7 @@ int main(int argc, char* argv[])
 	with different events, e.g. window sizing, mouse click or
 	keyboard stroke */
 	initializedGL();
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Paint the background color once
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Paint the background color once
 	glutDisplayFunc(paintGL);
 
 	glutMouseFunc(mouse_callback);
