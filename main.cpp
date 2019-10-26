@@ -58,12 +58,14 @@ GLuint catEBO;
 
 float translate_delta = 0.01f;
 float rotate_delta = 0.1f;
+float brightness_delta = 0.1f;
 float cameraX_delta = 0.01f;
 float cameraY_delta = 0.01f;
 float cameraZ_delta = 0.05f;
 
 int translate_press_num = 0;
 int rotate_press_num = 0;
+int brightness_press_num = 7;
 int cameraX_move_num = 0;
 int cameraY_move_num = 50; // Y: 0.5
 int cameraZ_move_num = 20; // Z: 1.0
@@ -234,9 +236,11 @@ void keyboard_callback(unsigned char key, int x, int y)
 {
 	if (key == 'w')
 	{
+		brightness_press_num++;
 	}
 	else if (key == 's')
 	{
+		brightness_press_num--;
 	}
 	else if (key == 'a')
 	{
@@ -533,8 +537,10 @@ void paintGL(void)
 	glUniform3fv(uniAmbient, 1, value_ptr(ambient));
 
 	// Diffuse
-	vec3 lightPos(0.0f, 1.0f, 0.0f);
-	vec3 lightColor(1.0f, 1.0f, 1.0f);
+	float brightness = brightness_delta * brightness_press_num;
+
+	vec3 lightPos(0.0f, 0.2f, 0.0f);
+	vec3 lightColor(brightness);
 	glUniform3fv(uniLightPos, 1, value_ptr(lightPos));
 	glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
 
