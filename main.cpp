@@ -44,7 +44,6 @@ using glm::mat4;
 
 GLint programID;
 GLint uniTrans;
-GLint uniAmbient;
 
 GLuint textureID[2];
 GLuint groundTexture;
@@ -479,6 +478,10 @@ void sendDataToOpenGL()
 	glEnableVertexAttribArray(texAttrib);
 	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
 
+	GLint normAttrib = glGetAttribLocation(programID, "normal");
+	glEnableVertexAttribArray(normAttrib);
+	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+
 	groundTexture = loadTexture("./resources/floor/floor_diff.jpg", 0);
 
 	// Cat
@@ -498,6 +501,9 @@ void sendDataToOpenGL()
 	glEnableVertexAttribArray(texAttrib);
 	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
 
+	glEnableVertexAttribArray(normAttrib);
+	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+
 	catTexture = loadTexture("./resources/cat/cat_01.jpg", 1);
 
 	// Get reference of texture
@@ -512,7 +518,9 @@ void paintGL(void)
 
 	// Get reference of shader variable
 	uniTrans = glGetUniformLocation(programID, "model");
-	uniAmbient = glGetUniformLocation(programID, "ambient");
+	GLint uniAmbient = glGetUniformLocation(programID, "ambient");
+	GLint uniLightPos = glGetUniformLocation(programID, "lightPos");
+	GLint uniLightColor = glGetUniformLocation(programID, "lightColor");
 
 	//TODO:
 	//Set lighting information, such as position and color of lighting source
@@ -520,8 +528,15 @@ void paintGL(void)
 	//Bind different textures
 
 	// Lighting
+	// Ambient
 	vec3 ambient(0.5f, 0.5f, 0.5f);
 	glUniform3fv(uniAmbient, 1, value_ptr(ambient));
+
+	// Diffuse
+	vec3 lightPos(0.0f, 1.0f, 0.0f);
+	vec3 lightColor(1.0f, 1.0f, 1.0f);
+	glUniform3fv(uniLightPos, 1, value_ptr(lightPos));
+	glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
 
 	// Ground
 	transform("ground");
