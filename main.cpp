@@ -525,6 +525,7 @@ void paintGL(void)
 	GLint uniAmbient = glGetUniformLocation(programID, "ambient");
 	GLint uniLightPos = glGetUniformLocation(programID, "lightPos");
 	GLint uniLightColor = glGetUniformLocation(programID, "lightColor");
+	GLint viewPos = glGetUniformLocation(programID, "viewPos");
 
 	//TODO:
 	//Set lighting information, such as position and color of lighting source
@@ -543,6 +544,12 @@ void paintGL(void)
 	vec3 lightColor(brightness);
 	glUniform3fv(uniLightPos, 1, value_ptr(lightPos));
 	glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
+
+	// Specular
+	vec3 cameraPos(cameraX_delta * cameraX_move_num,
+				   cameraY_delta * cameraY_move_num,
+				   cameraZ_delta * cameraZ_move_num);
+	glUniform3fv(viewPos, 1, value_ptr(cameraPos));
 
 	// Ground
 	transform("ground");
@@ -563,9 +570,7 @@ void paintGL(void)
 
 	// Set up view transformation
 	mat4 view = lookAt(
-		vec3(cameraX_delta * cameraX_move_num,
-			 cameraY_delta * cameraY_move_num,
-			 cameraZ_delta * cameraZ_move_num),				// Position of the camera
+		cameraPos,				// Position of the camera
 		vec3(0.0f, 0.0f, 0.0f),	// The point to be centered on-screen
 		vec3(0.0f, 1.0f, 0.0f)	// The up axis
 	);
