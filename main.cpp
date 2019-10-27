@@ -15,8 +15,9 @@ Student Name:
 #include "Dependencies/glm/gtc/type_ptr.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
+#define _USE_MATH_DEFINES
 #include "Dependencies/stb_image/stb_image.h"
-
+#include <cmath>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -45,9 +46,10 @@ using glm::mat4;
 GLint programID;
 GLint uniTrans;
 
-GLuint textureID[2];
+GLuint textureID[3];
 GLuint groundTexture;
 GLuint catTexture;
+GLuint dogTexture;
 
 GLuint groundVAO;
 GLuint groundVBO;
@@ -55,6 +57,9 @@ GLuint groundEBO;
 GLuint catVAO;
 GLuint catVBO;
 GLuint catEBO;
+GLuint dogVAO;
+GLuint dogVBO;
+GLuint dogEBO;
 
 float translate_delta = 0.01f;
 float rotate_delta = 0.1f;
@@ -75,6 +80,7 @@ bool mouseClicked = false;
 
 Model ground;
 Model cat;
+Model dog;
 
 //a series utilities for setting shader parameters 
 void setMat4(const std::string& name, glm::mat4& value)
@@ -422,7 +428,7 @@ GLuint loadTexture(const char* texturePath, const int idx)
 		exit(1);
 	}
 
-	glGenTextures(2, textureID);
+	glGenTextures(3, textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID[idx]);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -446,18 +452,26 @@ void transform(string name) {
 
 	if (name == "ground")
 	{
-		model = glm::translate(mat4(1.0f), vec3(0.0f, 0.05f, 0.0f));
+		model *= glm::translate(mat4(1.0f), vec3(0.0f, 0.05f, 0.0f));
 		model *= glm::scale(mat4(1.0f), vec3(0.05f, 0.05f, 0.0625f)); // Apply first
-		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
 	}
 	else if (name == "cat")
 	{
-		model = glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, translate_delta * translate_press_num * 1.0f));
-		model *= glm::rotate(mat4(1.0f), rotate_delta * rotate_press_num * glm::radians(-45.0f), vec3(0.0f, 1.0f, 0.0f));
-		model *= glm::rotate(mat4(1.0f), glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-		model *= glm::scale(mat4(1.0f), vec3(0.005f, 0.005f, 0.005f));
-		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
+		float catAngle = rotate_delta * rotate_press_num * -45.0f;
+		float catX = translate_delta * translate_press_num * sin(catAngle * M_PI / 180);
+		float catZ = translate_delta * translate_press_num * cos(catAngle * M_PI / 180);
+
+		model = glm::translate(mat4(1.0f), vec3(catX, 0.0f, catZ)) *
+				glm::rotate(mat4(1.0f), rotate_delta * rotate_press_num * glm::radians(-45.0f), vec3(0.0f, 1.0f, 0.0f)) *
+				glm::rotate(mat4(1.0f), glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)) * // Front facing
+				glm::scale(mat4(1.0f), vec3(0.005f, 0.005f, 0.005f)); // Scale down
 	}
+	else if (name == "dog")
+	{
+		model = glm::translate(mat4(1.0f), vec3(0.2f, 0.0f, 0.0f)) *
+				glm::scale(mat4(1.0f), vec3(0.005f, 0.005f, 0.005f)); // Scale down
+	}
+	glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
 }
 
 void sendDataToOpenGL()
@@ -509,6 +523,28 @@ void sendDataToOpenGL()
 	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 
 	catTexture = loadTexture("./resources/cat/cat_01.jpg", 1);
+
+	// Dog
+	dog = loadOBJ("resources/dog/dog.obj");
+	glGenVertexArrays(1, &dogVAO);
+	glBindVertexArray(dogVAO);
+	glGenBuffers(1, &dogVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, dogVBO);
+	glBufferData(GL_ARRAY_BUFFER, dog.vertices.size() * sizeof(Vertex), &dog.vertices[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &dogEBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dogEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, dog.indices.size() * sizeof(unsigned int), &dog.indices[0], GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+
+	glEnableVertexAttribArray(texAttrib);
+	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+
+	glEnableVertexAttribArray(normAttrib);
+	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+
+	dogTexture = loadTexture("./resources/dog/dog.jpg", 2);
 
 	// Get reference of texture
 	GLuint textureID = glGetUniformLocation(programID, "tex");
@@ -567,6 +603,14 @@ void paintGL(void)
 
 	glBindVertexArray(catVAO);
 	glDrawElements(GL_TRIANGLES, cat.indices.size(), GL_UNSIGNED_INT, 0);
+
+	// Dog
+	transform("dog");
+
+	glBindTexture(GL_TEXTURE_2D, dogTexture);
+
+	glBindVertexArray(dogVAO);
+	glDrawElements(GL_TRIANGLES, dog.indices.size(), GL_UNSIGNED_INT, 0);
 
 	// Set up view transformation
 	mat4 view = lookAt(
