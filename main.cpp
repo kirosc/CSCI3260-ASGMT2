@@ -46,10 +46,11 @@ using glm::mat4;
 GLint programID;
 GLint uniTrans;
 
-GLuint textureID[3];
+GLuint textureID[4];
 GLuint groundTexture;
 GLuint catTexture;
 GLuint dogTexture;
+GLuint penguinTexture;
 
 GLuint groundVAO;
 GLuint groundVBO;
@@ -60,6 +61,9 @@ GLuint catEBO;
 GLuint dogVAO;
 GLuint dogVBO;
 GLuint dogEBO;
+GLuint penguinVAO;
+GLuint penguinVBO;
+GLuint penguinEBO;
 
 float translate_delta = 0.01f;
 float rotate_delta = 0.1f;
@@ -81,6 +85,7 @@ bool mouseClicked = false;
 Model ground;
 Model cat;
 Model dog;
+Model penguin;
 
 //a series utilities for setting shader parameters 
 void setMat4(const std::string& name, glm::mat4& value)
@@ -428,7 +433,7 @@ GLuint loadTexture(const char* texturePath, const int idx)
 		exit(1);
 	}
 
-	glGenTextures(3, textureID);
+	glGenTextures(4, textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID[idx]);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -464,12 +469,17 @@ void transform(string name) {
 		model = glm::translate(mat4(1.0f), vec3(catX, 0.0f, catZ)) *
 				glm::rotate(mat4(1.0f), rotate_delta * rotate_press_num * glm::radians(-45.0f), vec3(0.0f, 1.0f, 0.0f)) *
 				glm::rotate(mat4(1.0f), glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)) * // Front facing
-				glm::scale(mat4(1.0f), vec3(0.005f, 0.005f, 0.005f)); // Scale down
+				glm::scale(mat4(1.0f), vec3(0.005f)); // Scale down
 	}
 	else if (name == "dog")
 	{
 		model = glm::translate(mat4(1.0f), vec3(0.2f, 0.0f, 0.0f)) *
-				glm::scale(mat4(1.0f), vec3(0.005f, 0.005f, 0.005f)); // Scale down
+			glm::scale(mat4(1.0f), vec3(0.005f)); // Scale down
+	}
+	else if (name == "penguin")
+	{
+		model = glm::translate(mat4(1.0f), vec3(-0.2f, 0.0f, 0.0f)) *
+			glm::scale(mat4(1.0f), vec3(0.002f)); // Scale down
 	}
 	glUniformMatrix4fv(uniTrans, 1, GL_FALSE, value_ptr(model));
 }
@@ -546,6 +556,28 @@ void sendDataToOpenGL()
 
 	dogTexture = loadTexture("./resources/dog/dog.jpg", 2);
 
+	// Penguin
+	penguin = loadOBJ("resources/penguin/penguin.obj");
+	glGenVertexArrays(1, &penguinVAO);
+	glBindVertexArray(penguinVAO);
+	glGenBuffers(1, &penguinVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, penguinVBO);
+	glBufferData(GL_ARRAY_BUFFER, penguin.vertices.size() * sizeof(Vertex), &penguin.vertices[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &penguinEBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, penguinEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, penguin.indices.size() * sizeof(unsigned int), &penguin.indices[0], GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+
+	glEnableVertexAttribArray(texAttrib);
+	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+
+	glEnableVertexAttribArray(normAttrib);
+	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+
+	penguinTexture = loadTexture("./resources/penguin/penguin.jpg", 2);
+
 	// Get reference of texture
 	GLuint textureID = glGetUniformLocation(programID, "tex");
 	glUniform1i(textureID, 0);
@@ -611,6 +643,14 @@ void paintGL(void)
 
 	glBindVertexArray(dogVAO);
 	glDrawElements(GL_TRIANGLES, dog.indices.size(), GL_UNSIGNED_INT, 0);
+
+	// Penguin
+	transform("penguin");
+
+	glBindTexture(GL_TEXTURE_2D, penguinTexture);
+
+	glBindVertexArray(penguinVAO);
+	glDrawElements(GL_TRIANGLES, penguin.indices.size(), GL_UNSIGNED_INT, 0);
 
 	// Set up view transformation
 	mat4 view = lookAt(
