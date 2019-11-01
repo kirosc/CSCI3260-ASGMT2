@@ -65,6 +65,8 @@ GLuint penguinVAO;
 GLuint penguinVBO;
 GLuint penguinEBO;
 
+vec3 catPosition(0.0f, 0.0f, 0.0f);
+
 float translate_delta = 0.01f;
 float rotate_delta = 0.1f;
 float brightness_delta = 0.1f;
@@ -72,7 +74,6 @@ float cameraX_delta = 0.01f;
 float cameraY_delta = 0.01f;
 float cameraZ_delta = 0.05f;
 
-int translate_press_num = 0;
 int rotate_press_num = 0;
 int brightness_press_num = 7;
 int cameraX_move_num = 0;
@@ -284,13 +285,15 @@ void keyboard_callback(unsigned char key, int x, int y)
 
 void special_callback(int key, int x, int y)
 {
+	float catAngle = rotate_delta * rotate_press_num * -45.0f;
+	vec3 displacement = translate_delta * glm::vec3(sin(catAngle * M_PI / 180), 0, cos(catAngle * M_PI / 180));
 	if (key == GLUT_KEY_UP)
 	{
-		translate_press_num++;
+		catPosition += displacement;
 	}
 	else if (key == GLUT_KEY_DOWN)
 	{
-		translate_press_num--;
+		catPosition -= displacement;
 	}
 	else if (key == GLUT_KEY_LEFT)
 	{
@@ -462,13 +465,9 @@ void transform(string name) {
 	}
 	else if (name == "cat")
 	{
-		float catAngle = rotate_delta * rotate_press_num * -45.0f;
-		float catX = translate_delta * translate_press_num * sin(catAngle * M_PI / 180);
-		float catZ = translate_delta * translate_press_num * cos(catAngle * M_PI / 180);
-
-		model = glm::translate(mat4(1.0f), vec3(catX, 0.0f, catZ)) *
+		model = glm::translate(mat4(1.0f), catPosition) *
 				glm::rotate(mat4(1.0f), rotate_delta * rotate_press_num * glm::radians(-45.0f), vec3(0.0f, 1.0f, 0.0f)) *
-				glm::rotate(mat4(1.0f), glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)) * // Front facing
+				glm::rotate(mat4(1.0f), glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)) * // Front facing 
 				glm::scale(mat4(1.0f), vec3(0.005f)); // Scale down
 	}
 	else if (name == "dog")
