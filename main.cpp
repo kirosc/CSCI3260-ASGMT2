@@ -73,15 +73,20 @@ float brightness_delta = 0.1f;
 float cameraX_delta = 0.01f;
 float cameraY_delta = 0.01f;
 float cameraZ_delta = 0.05f;
+float light_X = 0.2f * sin(0.5f * M_PI / 180);
+float light_Z = 0.2f * cos(0.5f * M_PI / 180);
+float light_rotateion_angle = 0.0f;
 
 int rotate_press_num = 0;
 int brightness_press_num = 7;
 int cameraX_move_num = 0;
 int cameraY_move_num = 50; // Y: 0.5
 int cameraZ_move_num = 20; // Z: 1.0
-
 int lastMouseX, lastMouseY;
+unsigned int animationSpeed = 50;
+
 bool mouseClicked = false;
+bool rotateLight = false;
 
 Model ground;
 Model cat;
@@ -254,11 +259,9 @@ void keyboard_callback(unsigned char key, int x, int y)
 	{
 		brightness_press_num--;
 	}
-	else if (key == 'a')
+	else if (key == 'p')
 	{
-	}
-	else if (key == 'd')
-	{
+		rotateLight = !rotateLight;
 	}
 	else if (key == '1')
 	{
@@ -302,6 +305,20 @@ void special_callback(int key, int x, int y)
 	else if (key == GLUT_KEY_RIGHT)
 	{
 		rotate_press_num++;
+	}
+}
+
+void animation_callback(int value) {
+	if (rotateLight)
+	{
+		if (light_rotateion_angle >= 360)
+		{
+			light_rotateion_angle = 0.0f;
+		}
+		// Orbit
+		light_X = 0.2f * sin(light_rotateion_angle * M_PI / 180);
+		light_Z = 0.2f * cos(light_rotateion_angle * M_PI / 180);
+		light_rotateion_angle += 0.5f;
 	}
 }
 
@@ -594,12 +611,8 @@ void paintGL(void)
 	GLint uniLightColor = glGetUniformLocation(programID, "lightColor");
 	GLint viewPos = glGetUniformLocation(programID, "viewPos");
 
-	//TODO:
-	//Set lighting information, such as position and color of lighting source
-	//Set transformation matrix
-	//Bind different textures
-
 	// Lighting
+
 	// Ambient
 	vec3 ambient(0.5f, 0.5f, 0.5f);
 	glUniform3fv(uniAmbient, 1, value_ptr(ambient));
@@ -607,7 +620,7 @@ void paintGL(void)
 	// Diffuse
 	float brightness = brightness_delta * brightness_press_num;
 
-	vec3 lightPos(0.0f, 0.2f, 0.0f);
+	vec3 lightPos(light_X, 0.2f, light_Z);
 	vec3 lightColor(brightness);
 	glUniform3fv(uniLightPos, 1, value_ptr(lightPos));
 	glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
@@ -617,6 +630,14 @@ void paintGL(void)
 				   cameraY_delta * cameraY_move_num,
 				   cameraZ_delta * cameraZ_move_num);
 	glUniform3fv(viewPos, 1, value_ptr(cameraPos));
+
+	// Rotate light source
+	if (rotateLight)
+	{
+		glutTimerFunc(animationSpeed, animation_callback, 0);
+	}
+
+	// Model
 
 	// Ground
 	transform("ground");
