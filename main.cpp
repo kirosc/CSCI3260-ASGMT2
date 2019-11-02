@@ -614,7 +614,7 @@ void paintGL(void)
 	// Lighting
 
 	// Ambient
-	vec3 ambient(0.5f, 0.5f, 0.5f);
+	vec3 ambient(0.2f, 0.2f, 0.2f);
 	glUniform3fv(uniAmbient, 1, value_ptr(ambient));
 
 	// Diffuse
