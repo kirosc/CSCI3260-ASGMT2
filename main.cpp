@@ -257,7 +257,10 @@ void keyboard_callback(unsigned char key, int x, int y)
 	}
 	else if (key == 's')
 	{
-		brightness_press_num--;
+		if (brightness_press_num > 0) 
+		{
+			brightness_press_num--;
+		}
 	}
 	else if (key == 'p')
 	{
