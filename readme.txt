@@ -10,5 +10,6 @@ Manipulation:
 	Key "↑" & "↓": Move the cat forward and backward
 	Key "←" & "→": Rotate the cat left and right
 	Key "p": Rotate the environment light
+	Key "Spacebar": Jump
 	Click mouse left button and move: Move the camera freely
 	Mouse wheel: Move the camera along z-axis

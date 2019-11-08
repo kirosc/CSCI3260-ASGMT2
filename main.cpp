@@ -65,6 +65,7 @@ GLuint penguinVAO;
 GLuint penguinVBO;
 GLuint penguinEBO;
 
+float cat_Y = 0.0f;
 vec3 catPosition(0.0f, 0.0f, 0.0f);
 
 float translate_delta = 0.01f;
@@ -87,6 +88,8 @@ unsigned int animationSpeed = 50;
 
 bool mouseClicked = false;
 bool rotateLight = false;
+bool jumping = false;
+bool dropping = false;
 
 Model ground;
 Model cat;
@@ -282,6 +285,10 @@ void keyboard_callback(unsigned char key, int x, int y)
 	{
 		groundTexture = loadTexture("./resources/floor/floor_spec.jpg", 0);
 	}
+	else if (key == ' ' && !jumping && !dropping)
+	{
+		jumping = true;
+	}
 	else if (key == 27)
 	{
 		// Exit the program gracefully
@@ -311,7 +318,7 @@ void special_callback(int key, int x, int y)
 	}
 }
 
-void animation_callback(int value) {
+void light_animation(int value) {
 	if (rotateLight)
 	{
 		if (light_rotateion_angle >= 360)
@@ -322,6 +329,27 @@ void animation_callback(int value) {
 		light_X = 0.2f * sin(light_rotateion_angle * M_PI / 180);
 		light_Z = 0.2f * cos(light_rotateion_angle * M_PI / 180);
 		light_rotateion_angle += 0.5f;
+	}
+}
+
+void jump_animation(int value) {
+	if (jumping)
+	{
+		cat_Y += 0.002;
+		if (cat_Y >= 0.1)
+		{
+			dropping = true;
+			jumping = false;
+		}
+	}
+	if (dropping)
+	{
+		cat_Y -= 0.002;
+		if (cat_Y <= 0.0)
+		{
+			cat_Y = 0.0;
+			dropping = false;
+		}
 	}
 }
 
@@ -485,7 +513,8 @@ void transform(string name) {
 	}
 	else if (name == "cat")
 	{
-		model = glm::translate(mat4(1.0f), catPosition) *
+		model = glm::translate(mat4(1.0f), vec3(0.0f, cat_Y, 0.0f)) *
+				glm::translate(mat4(1.0f), catPosition) *
 				glm::rotate(mat4(1.0f), rotate_delta * rotate_press_num * glm::radians(-45.0f), vec3(0.0f, 1.0f, 0.0f)) *
 				glm::rotate(mat4(1.0f), glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)) * // Front facing 
 				glm::scale(mat4(1.0f), vec3(0.005f)); // Scale down
@@ -637,7 +666,12 @@ void paintGL(void)
 	// Rotate light source
 	if (rotateLight)
 	{
-		glutTimerFunc(animationSpeed, animation_callback, 0);
+		glutTimerFunc(animationSpeed, light_animation, 0);
+	}
+
+	if (jumping || dropping)
+	{
+		glutTimerFunc(animationSpeed, jump_animation, 0);
 	}
 
 	// Model
